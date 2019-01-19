@@ -8,8 +8,17 @@
 struct IKCPCB;
 typedef struct IKCPCB ikcpcb;
 
+#ifndef __IUINT64_DEFINED
+#define __IUINT64_DEFINED
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+typedef unsigned __int64 IUINT64;
+#else
+typedef unsigned long long IUINT64;
+#endif
+#endif
+
 // indicate a converse between a client and connection_obj between server.
-typedef uint32_t kcp_conv_t;
+typedef IUINT64 kcp_conv_t;
 
 namespace kcp_svr
 {

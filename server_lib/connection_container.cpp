@@ -71,7 +71,7 @@ kcp_conv_t connection_container::get_new_conv(void) const
     // and must bigger than 1000
 
     // increase from 1001, must bigger than 1000
-    static uint32_t static_cur_conv = 1000;
+    static kcp_conv_t static_cur_conv = 1000;
     static_cur_conv++;
     return static_cur_conv;
 }

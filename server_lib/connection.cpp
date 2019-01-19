@@ -61,6 +61,7 @@ void connection::set_udp_remote_endpoint(const udp::endpoint& udp_remote_endpoin
 void connection::init_kcp(const kcp_conv_t& conv)
 {
     conv_ = conv;
+    // printf("connection::init_kcp\n");
     p_kcp_ = ikcp_create(conv, (void*)this);
     p_kcp_->output = &connection::udp_output;
 

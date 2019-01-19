@@ -101,7 +101,7 @@ void connection_manager::handle_connect_packet()
 
 void connection_manager::handle_kcp_packet(size_t bytes_recvd)
 {
-    IUINT32 conv;
+    kcp_conv_t conv;
     int ret = ikcp_get_conv(udp_data_, bytes_recvd, &conv);
     if (ret == 0)
     {

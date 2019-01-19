@@ -1,7 +1,9 @@
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <cstdlib>
 #include <stdio.h>
+
 
 #include "connect_packet.hpp"
 
@@ -28,26 +30,30 @@ bool is_send_back_conv_packet(const char* data, size_t len)
         memcmp(data, ASIO_KCP_SEND_BACK_CONV_PACKET, sizeof(ASIO_KCP_SEND_BACK_CONV_PACKET) - 1) == 0);
 }
 
-std::string making_send_back_conv_packet(uint32_t conv)
+std::string making_send_back_conv_packet(kcp_conv_t conv)
 {
     char str_send_back_conv[256] = "";
-    size_t n = snprintf(str_send_back_conv, sizeof(str_send_back_conv), "%s %u", ASIO_KCP_SEND_BACK_CONV_PACKET, conv);
+    size_t n = snprintf(str_send_back_conv, sizeof(str_send_back_conv), "%s %llu", ASIO_KCP_SEND_BACK_CONV_PACKET, conv);
     return std::string(str_send_back_conv, n);
 }
 
-uint32_t grab_conv_from_send_back_conv_packet(const char* data, size_t len)
+kcp_conv_t grab_conv_from_send_back_conv_packet(const char* data, size_t len)
 {
-    uint32_t conv = atol(data + sizeof(ASIO_KCP_SEND_BACK_CONV_PACKET));
+    std::stringstream convStr;
+    convStr<<(data + sizeof(ASIO_KCP_SEND_BACK_CONV_PACKET));
+
+    kcp_conv_t conv;
+    convStr>>conv;
     return conv;
 }
 
 
 
 
-std::string making_disconnect_packet(uint32_t conv)
+std::string making_disconnect_packet(kcp_conv_t conv)
 {
     char str_disconnect_packet[256] = "";
-    size_t n = snprintf(str_disconnect_packet, sizeof(str_disconnect_packet), "%s %u", ASIO_KCP_DISCONNECT_PACKET, conv);
+    size_t n = snprintf(str_disconnect_packet, sizeof(str_disconnect_packet), "%s %llu", ASIO_KCP_DISCONNECT_PACKET, conv);
     return std::string(str_disconnect_packet, n);
 }
 
@@ -57,9 +63,13 @@ bool is_disconnect_packet(const char* data, size_t len)
         memcmp(data, ASIO_KCP_DISCONNECT_PACKET, sizeof(ASIO_KCP_DISCONNECT_PACKET) - 1) == 0);
 }
 
-uint32_t grab_conv_from_disconnect_packet(const char* data, size_t len)
+kcp_conv_t grab_conv_from_disconnect_packet(const char* data, size_t len)
 {
-    uint32_t conv = atol(data + sizeof(ASIO_KCP_DISCONNECT_PACKET));
+    std::stringstream convStr;
+    convStr<<(data + sizeof(ASIO_KCP_DISCONNECT_PACKET));
+
+    kcp_conv_t conv;
+    convStr>>conv;
     return conv;
 }
 

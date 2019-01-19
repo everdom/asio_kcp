@@ -252,7 +252,7 @@ typedef struct IQUEUEHEAD iqueue_head;
 struct IKCPSEG
 {
 	struct IQUEUEHEAD node;
-	IUINT32 conv;
+	IUINT64 conv;
 	IUINT32 cmd;
 	IUINT32 frg;
 	IUINT32 wnd;
@@ -267,14 +267,15 @@ struct IKCPSEG
 	char data[1];
 };
 
-typedef IUINT32 kcp_conv_t;
+typedef IUINT64 kcp_conv_t;
 
 //---------------------------------------------------------------------
 // IKCPCB
 //---------------------------------------------------------------------
 struct IKCPCB
 {
-	IUINT32 conv, mtu, mss, state;
+	IUINT64 conv;
+	IUINT32 mtu, mss, state;
 	IUINT32 snd_una, snd_nxt, rcv_nxt;
 	IUINT32 ts_recent, ts_lastack, ssthresh;
 	IINT32 rx_rttval, rx_srtt, rx_rto, rx_minrto;
@@ -328,7 +329,7 @@ extern "C" {
 // create a new kcp control object, 'conv' must equal in two endpoint
 // from the same connection. 'user' will be passed to the output callback
 // output callback can be setup like this: 'kcp->output = my_udp_output'
-ikcpcb* ikcp_create(IUINT32 conv, void *user);
+ikcpcb* ikcp_create(IUINT64 conv, void *user);
 
 // release kcp control object
 void ikcp_release(ikcpcb *kcp);
@@ -357,7 +358,7 @@ IUINT32 ikcp_check(const ikcpcb *kcp, IUINT32 current);
 // you can use this func to find out one packet should bind to which ikcpcb obj.
 // return 1 if get conv success.
 // return 0 if get conv error.
-int ikcp_get_conv(const char *data, long size, IUINT32* conv_out);
+int ikcp_get_conv(const char *data, long size, IUINT64* conv_out);
 
 // when you received a low level packet (eg. UDP packet), call it
 int ikcp_input(ikcpcb *kcp, const char *data, long size);

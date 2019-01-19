@@ -62,6 +62,7 @@ void kcp_client::stop()
 
 void kcp_client::init_kcp(kcp_conv_t conv)
 {
+    // printf("kcp_client::init_kcp\n");
     p_kcp_ = ikcp_create(conv, (void*)this);
     p_kcp_->output = &kcp_client::udp_output;
 
