@@ -122,6 +122,7 @@ client_with_asio::client_with_asio(boost::asio::io_service& io_service, int udp_
     kcp_client_.set_event_callback(client_event_callback_func, (void*)this);
     hook_client_timer();
     kcp_client_.connect_async(udp_port_bind, server_ip, server_port);
+    kcp_client_.init_kcp(123456789, 1, 2, 20 ,1);
     hook_timer_send_msg();
 }
 

@@ -16,10 +16,8 @@
 namespace asio_kcp {
 
 kcp_client::kcp_client(void) :
-    in_connect_stage_(false),
     connect_start_time_(0),
     last_send_connect_msg_time_(0),
-    connect_succeed_(false),
     pevent_func_(NULL),
     event_callback_var_(NULL),
     udp_port_bind_(0),
@@ -60,10 +58,16 @@ void kcp_client::stop()
 */
 }
 
-void kcp_client::init_kcp(kcp_conv_t conv)
+int kcp_client::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend, int nc)
 {
     // printf("kcp_client::init_kcp\n");
     p_kcp_ = ikcp_create(conv, (void*)this);
+
+    if(p_kcp_ == NULL){
+      printf("kcp_client::init_kcp ikcp create failed\n");
+      return -1;
+    }
+
     p_kcp_->output = &kcp_client::udp_output;
 
     // 启动快速模式
@@ -72,7 +76,8 @@ void kcp_client::init_kcp(kcp_conv_t conv)
     // 第四个参数 resend为快速重传指标，设置为2
     // 第五个参数 为是否禁用常规流控，这里禁止
     //ikcp_nodelay(p_kcp_, 1, 10, 2, 1);
-    ikcp_nodelay(p_kcp_, 1, 2, 1, 1); // 设置成1次ACK跨越直接重传, 这样反应速度会更快. 内部时钟5毫秒.
+    ikcp_nodelay(p_kcp_, nodelay, interval, resend, nc); // 设置成1次ACK跨越直接重传, 这样反应速度会更快. 内部时钟5毫秒.
+    return 0;
 }
 
 int kcp_client::connect_async(int udp_port_bind, const std::string& server_ip, const int server_port)
@@ -93,7 +98,6 @@ int kcp_client::connect_async(int udp_port_bind, const std::string& server_ip, c
 
     // do asio_kcp connect
     {
-        in_connect_stage_ = true;
         connect_start_time_ = iclock64();
     }
 
@@ -104,138 +108,21 @@ int kcp_client::connect_async(int udp_port_bind, const std::string& server_ip, c
 void kcp_client::update()
 {
     uint64_t cur_clock = iclock64();
-    if (in_connect_stage_)
-    {
-        do_asio_kcp_connect(cur_clock);
-        return;
-    }
 
-    if (connect_succeed_)
-    {
-        // send the msg in SendMsgQueue
-        do_send_msg_in_queue();
+    // send the msg in SendMsgQueue
+    do_send_msg_in_queue();
 
-        // recv the udp packet.
-        do_recv_udp_packet_in_loop();
+    // recv the udp packet.
+    do_recv_udp_packet_in_loop();
 
-        // ikcp_update
-        //
-        ikcp_update(p_kcp_, cur_clock);
-    }
+    // ikcp_update
+    //
+    ikcp_update(p_kcp_, cur_clock);
 }
 
-void kcp_client::do_asio_kcp_connect(uint64_t cur_clock)
-{
-    if (connect_timeout(cur_clock))
-    {
-        (*pevent_func_)(0, eConnectFailed, KCP_CONNECT_TIMEOUT_MSG, event_callback_var_);
-        in_connect_stage_ = false;
-        return;
-    }
-    if (need_send_connect_packet(cur_clock))
-        do_send_connect_packet(cur_clock);
 
-    try_recv_connect_back_packet();
-}
 
-bool kcp_client::need_send_connect_packet(uint64_t cur_clock) const
-{
-    return (cur_clock - last_send_connect_msg_time_ > KCP_RESEND_CONNECT_MSG_INTERVAL);
-}
-
-bool kcp_client::connect_timeout(uint64_t cur_clock) const
-{
-    return (cur_clock - connect_start_time_ > KCP_CONNECT_TIMEOUT_TIME);
-}
-
-void kcp_client::do_send_connect_packet(uint64_t cur_clock)
-{
-    last_send_connect_msg_time_ = cur_clock;
-
-    // send a connect cmd.
-    std::string connect_msg = asio_kcp::making_connect_packet();
-    std::cerr << "send connect packet" << std::endl;
-    const ssize_t send_ret = send(udp_socket_, connect_msg.c_str(), connect_msg.size(), 0);
-    if (send_ret < 0)
-    {
-        std::cerr << "do_asio_kcp_connect send error return with errno: " << errno << " " << strerror(errno) << std::endl;
-    }
-}
-
-void kcp_client::try_recv_connect_back_packet(void)
-{
-    char recv_buf[1400] = ""; // connect udp packet will not bigger than 1400.
-    const ssize_t ret_recv = recv(udp_socket_, recv_buf, sizeof(recv_buf), 0); // recv timeout is 2 milliseconds. - SO_RCVTIMEO
-    if (ret_recv < 0)
-    {
-        int err = errno;
-        if (err == EAGAIN)
-            return;
-        std::cerr << "try_recv_connect_back_packet recv error return with errno: " << err << " " << strerror(err) << std::endl;
-    }
-    if (ret_recv > 0 && asio_kcp::is_send_back_conv_packet(recv_buf, ret_recv))
-    {
-        // connect ok.
-
-        kcp_conv_t conv = asio_kcp::grab_conv_from_send_back_conv_packet(recv_buf, ret_recv);
-
-        std::cerr << "connect succeed in " << iclock64() - connect_start_time_ << " milliseconds"
-            << " conv:" << conv
-            << std::endl;
-        init_kcp(conv);
-        in_connect_stage_ = false;
-        connect_succeed_ = true;
-        (*pevent_func_)(p_kcp_->conv, eConnect, "connect succeed", event_callback_var_);
-    }
-}
-/*
-int kcp_client::do_asio_kcp_connect_old(void)
-{
-    char recv_buf[1400] = ""; // connect udp packet will not bigger than 1400.
-    std::string connect_msg = asio_kcp::making_connect_packet();
-
-    // loop 5 seconds for try.
-    time_t begin_time = ::time(NULL);
-    while (true)
-    {
-        time_t cur_time = ::time(NULL);
-        if (cur_time - begin_time > 5)
-            return KCP_ERR_KCP_CONNECT_FAIL;
-
-        // send a connect cmd.
-        std::cerr << "send connect packet" << std::endl;
-        const ssize_t send_ret = send(udp_socket_, connect_msg.c_str(), connect_msg.size(), 0);
-        if (send_ret < 0)
-        {
-            std::cerr << "do_asio_kcp_connect send error return with errno: " << errno << " " << strerror(errno) << std::endl;
-        }
-
-        // try recv in 500 milliseconds
-        for (int j = 0; j < 250; j++)
-        {
-            const ssize_t ret_recv = recv(udp_socket_, recv_buf, sizeof(recv_buf), 0); // recv timeout is 2 milliseconds. - SO_RCVTIMEO
-            if (ret_recv < 0)
-            {
-                int err = errno;
-                if (err == EAGAIN)
-                    continue;
-                std::cerr << "do_asio_kcp_connect recv error return with errno: " << err << " " << strerror(err) << std::endl;
-            }
-            if (ret_recv > 0 && asio_kcp::is_send_back_conv_packet(recv_buf, ret_recv))
-            {
-                // connect ok.
-                std::cerr << "connect succeed in " << ::time(NULL) - begin_time << " seconds" << std::endl;
-                // save conv when recved connect back packet.
-                kcp_conv_t conv = asio_kcp::grab_conv_from_send_back_conv_packet(recv_buf, ret_recv);
-                // init p_kcp_
-                init_kcp(conv);
-                return 0;
-            }
-
-        }
-    }
-}
-*/
+//
 int kcp_client::init_udp_connect(void)
 {
     // servaddr_

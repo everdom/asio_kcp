@@ -27,8 +27,6 @@ typedef IUINT64 kcp_conv_t;
 
 #define MAX_MSG_SIZE 1024 * 10
 #define KCP_UPDATE_INTERVAL 5 // milliseconds
-#define KCP_RESEND_CONNECT_MSG_INTERVAL 500 // milliseconds
-#define KCP_CONNECT_TIMEOUT_TIME 5000 // milliseconds
 
 #define KCP_ERR_ALREADY_CONNECTED       -2001
 #define KCP_ERR_ADDRESS_INVALID         -2002
@@ -103,6 +101,7 @@ public:
     // event_callback_func will be called in the thread which you call update()
     void set_event_callback(const client_event_callback_t& event_callback_func, void* var);
 
+  int init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend, int nc);
     // we use system giving local port from system if udp_port_bind == 0
     // return KCP_ERR_XXX if some error happen.
     // kcp_client will call event_callback_func when connect succeed or failed.
@@ -121,35 +120,28 @@ public:
 private:
     kcp_client(const kcp_client&);
 
-    void init_kcp(kcp_conv_t conv);
     void clean(void);
 
 private:
+
     // return 0 if connect succeed.
     // return < 0 (KCP_ERR_XXX) when some error happen.
     int init_udp_connect(void);
 
     bool connect_timeout(uint64_t cur_clock) const;
-    bool need_send_connect_packet(uint64_t cur_clock) const;
-    void do_asio_kcp_connect(uint64_t cur_clock);
-
 
     static int udp_output(const char *buf, int len, ikcpcb *kcp, void *user);
     void send_udp_package(const char *buf, int len);
-    void do_send_connect_packet(uint64_t cur_clock);
 
 
     void do_recv_udp_packet_in_loop(void);
     void do_send_msg_in_queue(void);
     void handle_udp_packet(const std::string& udp_packet);
-    void try_recv_connect_back_packet(void);
 
     std::string recv_udp_package_from_kcp(void);
 
-    bool in_connect_stage_;
     uint64_t connect_start_time_;
     uint64_t last_send_connect_msg_time_;
-    bool connect_succeed_;
 
     client_event_callback_t* pevent_func_;
     void* event_callback_var_;
