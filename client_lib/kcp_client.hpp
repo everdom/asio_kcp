@@ -142,6 +142,7 @@ private:
 
     uint64_t connect_start_time_;
     uint64_t last_send_connect_msg_time_;
+    bool connect_succeed_;
 
     client_event_callback_t* pevent_func_;
     void* event_callback_var_;

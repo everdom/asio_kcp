@@ -60,6 +60,8 @@ public:
     kcp_client_wrap(void);
     ~kcp_client_wrap(void);
 
+    int init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend, int nc);
+
     void set_event_callback(const client_event_callback_t& event_callback_func, void* var);
 
     // Sync connect. This function will block until connect succeed or failed.

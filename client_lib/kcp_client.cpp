@@ -18,6 +18,7 @@ namespace asio_kcp {
 kcp_client::kcp_client(void) :
     connect_start_time_(0),
     last_send_connect_msg_time_(0),
+    connect_succeed_(false),
     pevent_func_(NULL),
     event_callback_var_(NULL),
     udp_port_bind_(0),
@@ -77,6 +78,7 @@ int kcp_client::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend,
     // 第五个参数 为是否禁用常规流控，这里禁止
     //ikcp_nodelay(p_kcp_, 1, 10, 2, 1);
     ikcp_nodelay(p_kcp_, nodelay, interval, resend, nc); // 设置成1次ACK跨越直接重传, 这样反应速度会更快. 内部时钟5毫秒.
+    connect_succeed_ = true;
     return 0;
 }
 
@@ -109,15 +111,18 @@ void kcp_client::update()
 {
     uint64_t cur_clock = iclock64();
 
-    // send the msg in SendMsgQueue
-    do_send_msg_in_queue();
+    if (connect_succeed_)
+    {
+      // send the msg in SendMsgQueue
+      do_send_msg_in_queue();
 
-    // recv the udp packet.
-    do_recv_udp_packet_in_loop();
+      // recv the udp packet.
+      do_recv_udp_packet_in_loop();
 
-    // ikcp_update
-    //
-    ikcp_update(p_kcp_, cur_clock);
+      // ikcp_update
+      //
+      ikcp_update(p_kcp_, cur_clock);
+    }
 }
 
 

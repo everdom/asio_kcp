@@ -3,6 +3,7 @@
 #include "kcp_client_wrap.hpp"
 #include "kcp_client_util.h"
 #include "../essential/check_function.h"
+// #include "../essential/_src/check_function.cpp"
 
 namespace asio_kcp {
 
@@ -22,6 +23,10 @@ kcp_client_wrap::kcp_client_wrap(void) :
 kcp_client_wrap::~kcp_client_wrap(void)
 {
     stop();
+}
+
+int kcp_client_wrap::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend, int nc){
+  return kcp_client_.init_kcp(conv,nodelay, interval, resend, nc);
 }
 
 void kcp_client_wrap::set_event_callback(const client_event_callback_t& event_callback_func, void* var)
