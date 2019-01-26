@@ -91,13 +91,13 @@ void connection_manager::call_event_callback_func(kcp_conv_t conv, eEventType ev
     event_callback_(conv, event_type, msg);
 }
 
-void connection_manager::handle_connect_packet()
-{
-    kcp_conv_t conv = connections_.get_new_conv();
-    std::string send_back_msg = asio_kcp::making_send_back_conv_packet(conv);
-    udp_socket_.send_to(boost::asio::buffer(send_back_msg), udp_remote_endpoint_);
-    connections_.add_new_connection(shared_from_this(), conv, udp_remote_endpoint_);
-}
+// void connection_manager::handle_connect_packet()
+// {
+//     kcp_conv_t conv = connections_.get_new_conv();
+//     std::string send_back_msg = asio_kcp::making_send_back_conv_packet(conv);
+//     udp_socket_.send_to(boost::asio::buffer(send_back_msg), udp_remote_endpoint_);
+//     connections_.add_new_connection(shared_from_this(), conv, udp_remote_endpoint_);
+// }
 
 void connection_manager::handle_kcp_packet(size_t bytes_recvd)
 {
@@ -112,8 +112,8 @@ void connection_manager::handle_kcp_packet(size_t bytes_recvd)
     connection::shared_ptr conn_ptr = connections_.find_by_conv(conv);
     if (!conn_ptr)
     {
-        std::cout << "connection not exist with conv: " << conv << std::endl;
-        return;
+        std::cout << "connection add conv: " << conv << std::endl;
+        conn_ptr = connections_.add_new_connection(shared_from_this(), conv, udp_remote_endpoint_);
     }
 
     if (conn_ptr)
@@ -141,11 +141,11 @@ void connection_manager::handle_udp_receive_from(const boost::system::error_code
                 << Essential::ToHexDumpText(std::string(udp_data_, bytes_recvd), 32);
         #endif
 
-        if (asio_kcp::is_connect_packet(udp_data_, bytes_recvd))
-        {
-            handle_connect_packet();
-            goto END;
-        }
+        // if (asio_kcp::is_connect_packet(udp_data_, bytes_recvd))
+        // {
+        //     handle_connect_packet();
+        //     goto END;
+        // }
 
         handle_kcp_packet(bytes_recvd);
     }
@@ -154,7 +154,6 @@ void connection_manager::handle_udp_receive_from(const boost::system::error_code
         printf("\nhandle_udp_receive_from error end! error: %s, bytes_recvd: %ld\n", error.message().c_str(), bytes_recvd);
     }
 
-END:
     hook_udp_async_receive();
 }
 

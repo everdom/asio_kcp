@@ -49,7 +49,7 @@ private:
     void handle_kcp_time(void);
     void hook_kcp_timer(void);
 
-    void handle_connect_packet();
+    // void handle_connect_packet();
     void handle_kcp_packet(size_t bytes_recvd);
 
 private:
