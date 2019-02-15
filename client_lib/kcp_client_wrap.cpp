@@ -35,12 +35,12 @@ void kcp_client_wrap::set_event_callback(const client_event_callback_t& event_ca
     event_func_var_ = var;
 }
 
-void kcp_client_wrap::client_event_callback_func(kcp_conv_t conv, eEventType event_type, const std::string& msg, void* var)
+  void kcp_client_wrap::client_event_callback_func(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg, void* var)
 {
     ((kcp_client_wrap*)var)->handle_client_event_callback(conv, event_type, msg);
 }
 
-void kcp_client_wrap::handle_client_event_callback(kcp_conv_t conv, eEventType event_type, const std::string& msg)
+void kcp_client_wrap::handle_client_event_callback(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg)
 {
     std::cout << "kcp_client_wrap::handle_client_event_callback event_type: " << event_type << std::endl;
     switch (event_type)
@@ -172,9 +172,9 @@ void kcp_client_wrap::stop()
     kcp_client_.stop();
 }
 
-void kcp_client_wrap::send_msg(const std::string& msg)
+int kcp_client_wrap::send_msg(const char *data, long size)
 {
-    kcp_client_.send_msg(msg);
+    return kcp_client_.send_msg(data, size);
 }
 
 

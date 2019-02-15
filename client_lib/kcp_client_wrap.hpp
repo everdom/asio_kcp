@@ -88,7 +88,7 @@ public:
 
 
     // user level send msg.
-    void send_msg(const std::string& msg);
+    int send_msg(const char *data, long size);
 
     void stop();
 
@@ -99,8 +99,8 @@ private:
     void start_workthread(void);
 
 
-    static void client_event_callback_func(kcp_conv_t conv, eEventType event_type, const std::string& msg, void* var);
-    void handle_client_event_callback(kcp_conv_t conv, eEventType event_type, const std::string& msg);
+    static void client_event_callback_func(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg, void* var);
+  void handle_client_event_callback(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg);
 
     int do_asio_kcp_connect_loop(void);
 

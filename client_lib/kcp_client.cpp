@@ -193,8 +193,10 @@ int kcp_client::init_udp_connect(void)
         bind_addr.sin_port = htons(udp_port_bind_);
         bind_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         int ret_bind = ::bind(udp_socket_, (const struct sockaddr*)(&bind_addr), sizeof(bind_addr));
-        if (ret_bind < 0)
-            std::cerr << "setsockopt error return with errno: " << errno << " " << strerror(errno) << std::endl;
+        if (ret_bind < 0){
+          std::cerr << "setsockopt error return with errno: " << errno << " " << strerror(errno) << std::endl;
+          return KCP_ERR_BIND_UDP_FAILED;
+        }
     }
 
     // udp connect
@@ -213,7 +215,10 @@ int kcp_client::init_udp_connect(void)
 void kcp_client::do_recv_udp_packet_in_loop(void)
 {
     char recv_buf[MAX_MSG_SIZE * 2] = ""; // udp packet will not twice bigger than kcp msg size.
-    const ssize_t ret_recv = recv(udp_socket_, recv_buf, sizeof(recv_buf), 0);
+
+    socklen_t addr_len= sizeof(servaddr_);
+    const ssize_t ret_recv = recvfrom(udp_socket_, recv_buf, sizeof(recv_buf), 0, (struct sockaddr*)(&servaddr_), &addr_len);
+
     if (ret_recv < 0)
     {
         int err = errno;
@@ -223,7 +228,9 @@ void kcp_client::do_recv_udp_packet_in_loop(void)
         std::string err_detail = ostrm.str();
         ostrm << "do_asio_kcp_connect recv error return with errno: " << err << " " << strerror(err);
         std::cerr << err_detail << std::endl;
-        (*pevent_func_)(p_kcp_->conv, eDisconnect, err_detail, event_callback_var_);
+        
+        kcp_buffer_data msg(err_detail.c_str(), err_detail.size());
+        (*pevent_func_)(p_kcp_->conv, eDisconnect, msg, event_callback_var_);
         return;
     }
 
@@ -244,7 +251,9 @@ int kcp_client::udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 void kcp_client::send_udp_package(const char *buf, int len)
 {
     std::cerr << "send_udp_package" << std::endl;
-    const ssize_t send_ret = send(udp_socket_, buf, len, 0);
+
+    socklen_t addr_len= sizeof(servaddr_);
+    const ssize_t send_ret = sendto(udp_socket_, buf, len, 0, (const sockaddr *)(&servaddr_),addr_len);
     if (send_ret < 0)
     {
         std::cerr << "send_udp_package error with errno: " << errno << " " << strerror(errno) << std::endl;
@@ -255,21 +264,29 @@ void kcp_client::send_udp_package(const char *buf, int len)
     }
 }
 
-void kcp_client::send_msg(const std::string& msg)
+int kcp_client::send_msg(const char *data, long size)
 {
-    // todo: check msg size < MAX_MSG_SIZE
+    kcp_buffer_data msg;
+
+    int ret = msg.set_data(data, size);
+    if(ret != 0){
+      std::cerr << "send_msg set_data error: " << ret << std::endl;
+      return ret;
+    }
 
     send_msg_queue_.push(msg);
+    return 0;
 }
 
 void kcp_client::do_send_msg_in_queue(void)
 {
-    std::queue<std::string> msgs = send_msg_queue_.grab_all();
+    std::queue<kcp_buffer_data> msgs = send_msg_queue_.grab_all();
 
     while (msgs.size() > 0)
     {
-        std::string msg = msgs.front();
-        int send_ret = ikcp_send(p_kcp_, msg.c_str(), msg.size());
+        kcp_buffer_data msg = msgs.front();
+        // std::cout << "send_msg: " << msg.data() <<", size: "<<msg.size()<< std::endl;
+        int send_ret = ikcp_send(p_kcp_, msg.data(), msg.size());
         if (send_ret < 0)
         {
             std::cerr << "send_ret<0: " << send_ret << std::endl;
@@ -280,26 +297,26 @@ void kcp_client::do_send_msg_in_queue(void)
 
 void kcp_client::handle_udp_packet(const std::string& udp_packet)
 {
-    if (is_disconnect_packet(udp_packet.c_str(), udp_packet.size()))
-    {
-        if (pevent_func_ != NULL)
-        {
-            std::string msg(udp_packet);
-            (*pevent_func_)(p_kcp_->conv, eDisconnect, msg, event_callback_var_);
-        }
-        return;
-    }
+    // if (is_disconnect_packet(udp_packet.c_str(), udp_packet.size()))
+    // {
+    //     if (pevent_func_ != NULL)
+    //     {
+    //         std::string msg(udp_packet);
+    //         (*pevent_func_)(p_kcp_->conv, eDisconnect, msg, event_callback_var_);
+    //     }
+    //     return;
+    // }
 
 
     ikcp_input(p_kcp_, udp_packet.c_str(), udp_packet.size());
 
     while (true)
     {
-        const std::string& msg = recv_udp_package_from_kcp();
+        kcp_buffer_data msg = recv_udp_package_from_kcp();
         if (msg.size() > 0)
         {
             // recved good msg.
-            std::cerr << "recv good kcp msg: " << msg << std::endl;
+          std::cerr << "recv good kcp msg: " << msg.data() << std::endl;
             if (pevent_func_ != NULL)
             {
                 (*pevent_func_)(p_kcp_->conv, eRcvMsg, msg, event_callback_var_);
@@ -310,17 +327,20 @@ void kcp_client::handle_udp_packet(const std::string& udp_packet)
     }
 }
 
-std::string kcp_client::recv_udp_package_from_kcp(void)
+kcp_buffer_data kcp_client::recv_udp_package_from_kcp(void)
 {
     char kcp_buf[MAX_MSG_SIZE] = "";
     int kcp_recvd_bytes = ikcp_recv(p_kcp_, kcp_buf, sizeof(kcp_buf));
+
+    kcp_buffer_data result;
     if (kcp_recvd_bytes < 0)
     {
         //std::cerr << "kcp_recvd_bytes<0: " << kcp_recvd_bytes << std::endl;
-        return "";
+      return result;
     }
 
-    const std::string result(kcp_buf, kcp_recvd_bytes);
+    result.set_data(kcp_buf, kcp_recvd_bytes);
+    // const std::string result(kcp_buf, kcp_recvd_bytes);
     return result;
 }
 

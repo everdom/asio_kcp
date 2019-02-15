@@ -9,6 +9,7 @@
 
 
 #include "threadsafe_queue_mutex.hpp"
+#include "kcp_buffer_data.hpp"
 
 struct IKCPCB;
 typedef struct IKCPCB ikcpcb;
@@ -35,6 +36,7 @@ typedef IUINT64 kcp_conv_t;
 
 #define KCP_ERR_CONNECT_FUNC_FAIL       -2010
 #define KCP_ERR_KCP_CONNECT_TIMEOUT     -2011
+#define KCP_ERR_BIND_UDP_FAILED         -2012
 
 #define KCP_CONNECT_TIMEOUT_MSG "connect timeout"
 
@@ -50,7 +52,7 @@ enum eEventType
 
     eCountOfEventType
 };
-typedef void(client_event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, const std::string& /*msg*/, void* /*var*/);
+typedef void(client_event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, kcp_buffer_data& /*msg*/, void* /*var*/);
 
 
 /*
@@ -111,7 +113,7 @@ public:
 
     // user level send msg.
     // this func is multithread safe.
-    void send_msg(const std::string& msg);
+    int send_msg(const char *data, long size);
 
     // Stop connections.
     // this func is multithread safe.
@@ -138,7 +140,7 @@ private:
     void do_send_msg_in_queue(void);
     void handle_udp_packet(const std::string& udp_packet);
 
-    std::string recv_udp_package_from_kcp(void);
+    kcp_buffer_data recv_udp_package_from_kcp(void);
 
     uint64_t connect_start_time_;
     uint64_t last_send_connect_msg_time_;
@@ -147,7 +149,8 @@ private:
     client_event_callback_t* pevent_func_;
     void* event_callback_var_;
 
-    threadsafe_queue_mutex<std::string> send_msg_queue_;
+    // threadsafe_queue_mutex<std::string> send_msg_queue_;
+    threadsafe_queue_mutex<kcp_buffer_data> send_msg_queue_;
 
     int udp_port_bind_;
     std::string server_ip_;

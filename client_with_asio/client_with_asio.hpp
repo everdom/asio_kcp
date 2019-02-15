@@ -28,8 +28,8 @@ private:
     void hook_timer_send_msg(void);
     void send_test_msg(void);
 
-    static void client_event_callback_func(kcp_conv_t conv, asio_kcp::eEventType event_type, const std::string& msg, void* var);
-    void handle_client_event_callback(kcp_conv_t conv, asio_kcp::eEventType event_type, const std::string& msg);
+  static void client_event_callback_func(kcp_conv_t conv, asio_kcp::eEventType event_type, asio_kcp::kcp_buffer_data& msg, void* var);
+  void handle_client_event_callback(kcp_conv_t conv, asio_kcp::eEventType event_type, asio_kcp::kcp_buffer_data& msg);
 
     asio_kcp::kcp_client kcp_client_;
 

@@ -123,7 +123,8 @@ void client_with_asio_wrap::stop_all()
 
 void client_with_asio_wrap::send_test_msg(void)
 {
-    kcp_client_wrap_.send_msg(make_test_str(test_str_size_));
+    std::string test_str = make_test_str(test_str_size_);
+    kcp_client_wrap_.send_msg(test_str.c_str(), test_str.size());
 }
 
 void client_with_asio_wrap::print_recv_log(const std::string& msg)
@@ -218,12 +219,12 @@ void client_with_asio_wrap::handle_timer_send_msg(void)
     hook_timer_send_msg();
 }
 
-void client_with_asio_wrap::client_event_callback_func(kcp_conv_t conv, eEventType event_type, const std::string& msg, void* var)
+void client_with_asio_wrap::client_event_callback_func(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg, void* var)
 {
     ((client_with_asio_wrap*)var)->handle_client_event_callback(conv, event_type, msg);
 }
 
-void client_with_asio_wrap::handle_client_event_callback(kcp_conv_t conv, eEventType event_type, const std::string& msg)
+void client_with_asio_wrap::handle_client_event_callback(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg)
 {
     switch (event_type)
     {
@@ -238,7 +239,7 @@ void client_with_asio_wrap::handle_client_event_callback(kcp_conv_t conv, eEvent
             std::cout << "recv eRcvMsg with conv:" << conv << "  msg_count: " << msg.size() << std::endl;
             break;
         case eDisconnect:
-            std::cout << "disconnect with conv:" << conv << " msg: " << msg << std::endl;
+          std::cout << "disconnect with conv:" << conv << " msg: " << msg.data() << std::endl;
             stopped_ = true; // you can add boost::asio::io_service::work to prevent program quit
             break;
         default:
