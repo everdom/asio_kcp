@@ -5,8 +5,9 @@
 
 namespace asio_kcp {
 
-  kcp_buffer_data::kcp_buffer_data(){
-    
+  kcp_buffer_data::kcp_buffer_data():
+    buffer_size(0)
+  {
   }
 
   kcp_buffer_data::~kcp_buffer_data(){
@@ -14,6 +15,7 @@ namespace asio_kcp {
   }
 
   kcp_buffer_data::kcp_buffer_data(const char *data, long size){
+    kcp_buffer_data();
     set_data(data, size);
   }
 

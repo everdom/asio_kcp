@@ -138,7 +138,7 @@ private:
 
     void do_recv_udp_packet_in_loop(void);
     void do_send_msg_in_queue(void);
-    void handle_udp_packet(const std::string& udp_packet);
+    void handle_udp_packet(kcp_buffer_data& udp_packet);
 
     kcp_buffer_data recv_udp_package_from_kcp(void);
 

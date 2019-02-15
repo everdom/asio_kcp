@@ -237,8 +237,9 @@ void kcp_client::do_recv_udp_packet_in_loop(void)
     if (ret_recv == 0)
         return; // do nothing.   ignore the zero size packet.
 
+    kcp_buffer_data msg(recv_buf, ret_recv);
     // ret_recv > 0
-    handle_udp_packet(std::string(recv_buf, ret_recv));
+    handle_udp_packet(msg);
     return;
 }
 
@@ -295,20 +296,20 @@ void kcp_client::do_send_msg_in_queue(void)
     }
 }
 
-void kcp_client::handle_udp_packet(const std::string& udp_packet)
+void kcp_client::handle_udp_packet(kcp_buffer_data& udp_packet)
 {
-    // if (is_disconnect_packet(udp_packet.c_str(), udp_packet.size()))
+    // if (is_disconnect_packet(udp_packet.data(), udp_packet.size()))
     // {
     //     if (pevent_func_ != NULL)
     //     {
-    //         std::string msg(udp_packet);
+    //         kcp_buffer_data msg(udp_packet);
     //         (*pevent_func_)(p_kcp_->conv, eDisconnect, msg, event_callback_var_);
     //     }
     //     return;
     // }
 
 
-    ikcp_input(p_kcp_, udp_packet.c_str(), udp_packet.size());
+    ikcp_input(p_kcp_, udp_packet.data(), udp_packet.size());
 
     while (true)
     {
