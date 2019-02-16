@@ -51,3 +51,5 @@ third_party/build
 third_party/muduo
 third_party/boost_1_58_0
 server/server
+client_lib/build
+samples/*/build
