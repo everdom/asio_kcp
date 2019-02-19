@@ -56,8 +56,8 @@ int main(int argc, char* argv[])
         bool threadSafe = true;
         int flushInterval = 3; // seconds
         int checkEveryN = 1024;
-        g_logFile.reset(new ::muduo::LogFile(basename, rollSize, threadSafe, flushInterval, checkEveryN));
-        muduo::Logger::setOutput(dummyOutput);
+        //g_logFile.reset(new ::muduo::LogFile(basename, rollSize, threadSafe, flushInterval, checkEveryN));
+        //muduo::Logger::setOutput(dummyOutput);
         LOG_INFO << "start";
 
 

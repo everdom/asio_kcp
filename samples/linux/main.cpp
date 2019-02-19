@@ -23,7 +23,7 @@ int sendMsg(char *msg,size_t len){
 int main(int argc, char* argv[])
 {
 	g_kcp_client = new kcp_client_wrap();
-	int result  = g_kcp_client->connect_async(23445, "192.168.1.102", 12345);
+	int result  = g_kcp_client->connect_async(23445, "192.168.101.157", 12345);
 	cout << "connect result = " << result << endl;
 	result = g_kcp_client->init_kcp(123456,1,20,2,1);
 	cout << "init result = " << result << endl;
