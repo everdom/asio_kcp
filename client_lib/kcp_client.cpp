@@ -79,7 +79,9 @@ int kcp_client::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend,
     // 第五个参数 为是否禁用常规流控，这里禁止
     //ikcp_nodelay(p_kcp_, 1, 10, 2, 1);
     ikcp_nodelay(p_kcp_, nodelay, interval, resend, nc); // 设置成1次ACK跨越直接重传, 这样反应速度会更快. 内部时钟5毫秒.
+
     connect_succeed_ = true;
+
     return 0;
 }
 
@@ -229,7 +231,7 @@ void kcp_client::do_recv_udp_packet_in_loop(void)
         std::string err_detail = ostrm.str();
         ostrm << "do_asio_kcp_connect recv error return with errno: " << err << " " << strerror(err);
         std::cerr << err_detail << std::endl;
-        
+
         kcp_buffer_data msg(err_detail.c_str(), err_detail.size());
         (*pevent_func_)(p_kcp_->conv, eDisconnect, msg, event_callback_var_);
         return;
