@@ -31,7 +31,7 @@ kcp_client::kcp_client(void) :
 
 kcp_client::~kcp_client(void)
 {
-    clean();
+    stop();
 }
 
 void kcp_client::clean(void)
@@ -51,12 +51,18 @@ void kcp_client::set_event_callback(const client_event_callback_t& event_callbac
 
 void kcp_client::stop()
 {
-/*    set stopped_
-    waiting;
-        closesocket();
-        close ikcp;
-        delete ikcp;
-*/
+  if(udp_socket_)
+  {
+    close(udp_socket_);
+    udp_socket_ = NULL;
+  }
+
+  if (p_kcp_)
+  {
+    ikcp_release(p_kcp_);
+    p_kcp_ = NULL;
+  }
+
 }
 
 int kcp_client::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend, int nc)
@@ -269,16 +275,14 @@ void kcp_client::send_udp_package(const char *buf, int len)
 
 int kcp_client::send_msg(const char *data, long size)
 {
-    kcp_buffer_data msg;
-
-    int ret = msg.set_data(data, size);
-    if(ret != 0){
-      std::cerr << "send_msg set_data error: " << ret << std::endl;
-      return ret;
-    }
-
-    send_msg_queue_.push(msg);
-    return 0;
+  kcp_buffer_data msg;
+  int ret = msg.set_data(data, size);
+  if(ret != 0){
+    std::cerr << "send_msg set_data error: " << ret << std::endl;
+    return ret;
+  }
+  send_msg_queue_.push(msg);
+  return 0;
 }
 
 void kcp_client::do_send_msg_in_queue(void)
