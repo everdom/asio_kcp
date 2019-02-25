@@ -111,7 +111,7 @@ client_with_asio_wrap::client_with_asio_wrap(boost::asio::io_service& io_service
     client_timer_send_msg_(io_service)
 {
     kcp_client_wrap_.set_event_callback(client_event_callback_func, (void*)this);
-    kcp_client_wrap_.connect_async(udp_port_bind, server_ip, server_port);
+    kcp_client_wrap_.connect(udp_port_bind, server_ip, server_port);
     kcp_client_wrap_.init_kcp(123456789, 1, 2, 20 ,1);
     hook_timer_send_msg();
 }

@@ -48,6 +48,7 @@ add_library(kcp_client_static
 add_library(kcp_client 
     SHARED 
     ${CLIENT_SRC_FILES}
+    ${ESSENTIAL_SRC_FILES}
     ${UTIL_SRC_FILES}
     )
 
