@@ -1,29 +1,55 @@
-# NDK配置
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -std=gnu99")
+cmake_minimum_required (VERSION 2.8.9)
+set (ESSENTIAL_DIR ../essential)
+set (UTIL_DIR ../util)
+include_directories ( ${ESSENTIAL_DIR} )
+include_directories ( ${UTIL_DIR} )
 
-# Android 5.0 以上需要在此处设置 PIE
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIE -pie")
+set(CLIENT_SRC_FILES
+    kcp_buffer_data.cpp
+    kcp_client.cpp
+    kcp_client_util.cpp
+    kcp_client_wrap.cpp
+)
 
-# 配置使用 NDK Standalone Toolchain 编译
-set(NDK_STANDALONE_TOOLCHAIN /home/everdom/ndk_toolchain)
-set(CMAKE_SYSTEM_NAME Android)
-set(CMAKE_SYSTEM_VERSION 23)
-set(CMAKE_C_COMPILER ${NDK_STANDALONE_TOOLCHAIN}/bin/clang)
-set(CMAKE_CXX_COMPILER ${NDK_STANDALONE_TOOLCHAIN}/bin/clang++)
-set(CMAKE_FIND_ROOT_PATH ${NDK_STANDALONE_TOOLCHAIN})
+set(ESSENTIAL_SRC_FILES
+    ${ESSENTIAL_DIR}/_src/check_function.cpp
+    ${ESSENTIAL_DIR}/_src/utility/strutil.cpp
+)
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pie -fPIE -fPIC -O2 -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pie -fPIE -fPIC -Ofast -march=armv7-a -mfloat-abi=softfp -mfpu=vfpv3-d16")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fdata-sections -ffunction-sections -fvisibility=hidden -fvisibility-inlines-hidden")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-function -Wno-narrowing")
-SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden")
+set(UTIL_SRC_FILES
+    ${UTIL_DIR}/connect_packet.cpp
+    ${UTIL_DIR}/ikcp.c
+)
 
-# 使用 NDK 提供的头文件
-add_definitions("--sysroot=${NDK_STANDALONE_TOOLCHAIN}/sysroot")
+if (CMAKE_COMPILER_IS_GNUCXX)
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -pthread -frtti -fexceptions -fPIC" )  # -fdump-class-hierarchy : dump RTTI etc.
+    set (CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fPIE -pie")
+endif ()
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
+IF (WIN32)
+    set(LIBS_SYSTEM ws2_32)
+ELSEIF (UNIX)
+    IF(CMAKE_SYSTEM_NAME MATCHES "Linux")
+        set(LIBS_SYSTEM c dl pthread)
+    ELSEIF (CMAKE_SYSTEM_NAME MATCHES "FreeBSD")
+        set(LIBS_SYSTEM compat pthread)
+    ELSE()
+        set(LIBS_SYSTEM c pthread)
+    ENDIF()
+ENDIF()
 
-set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/client_lib)
-aux_source_directory(. SRC_LIST)
-add_library(kcp_client SHARED ${SRC_LIST})
-add_library(kcp_client_lib STATIC ${SRC_LIST})
+add_library(kcp_client_static 
+    STATIC 
+    ${CLIENT_SRC_FILES}
+    ${ESSENTIAL_SRC_FILES}
+    ${UTIL_SRC_FILES}
+    )
+
+add_library(kcp_client 
+    SHARED 
+    ${CLIENT_SRC_FILES}
+    ${ESSENTIAL_SRC_FILES}
+    ${UTIL_SRC_FILES}
+    )
+
+target_link_libraries(kcp_client ${LIBS_SYSTEM})
