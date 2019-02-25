@@ -268,32 +268,41 @@ void kcp_client::send_udp_package(const char *buf, int len)
 
 int kcp_client::send_msg(const char *data, long size)
 {
+    std::unique_lock<std::mutex>(mQueueMtx);
     kcp_buffer_data msg;
 
+    std::cout << "do_send_msg_in_queue send_msg size=" << send_msg_queue_.size() <<std::endl;
     int ret = msg.set_data(data, size);
     if(ret != 0){
       std::cerr << "send_msg set_data error: " << ret << std::endl;
       return ret;
     }
 
-    send_msg_queue_.push(msg);
+    send_msg_queue_.push_back(msg);
     return 0;
 }
 
 void kcp_client::do_send_msg_in_queue(void)
 {
-    std::queue<kcp_buffer_data> msgs = send_msg_queue_.grab_all();
-
-    while (msgs.size() > 0)
+    kcp_buffer_data msg;
+    while (true)
     {
-        kcp_buffer_data msg = msgs.front();
-        // std::cout << "send_msg: " << msg.data() <<", size: "<<msg.size()<< std::endl;
+        mQueueMtx.lock();
+        std::vector<kcp_buffer_data>::iterator it = send_msg_queue_.begin();
+        if(it == send_msg_queue_.end()){
+            mQueueMtx.unlock();  
+            return;
+        }else{
+            msg = *it;
+            msg.set_data(it->data(),it->size());
+            it = send_msg_queue_.erase(it);
+            mQueueMtx.unlock();  
+        }
         int send_ret = ikcp_send(p_kcp_, msg.data(), msg.size());
         if (send_ret < 0)
         {
             std::cerr << "send_ret<0: " << send_ret << std::endl;
         }
-        msgs.pop();
     }
 }
 

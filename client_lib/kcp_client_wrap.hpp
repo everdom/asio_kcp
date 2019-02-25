@@ -2,6 +2,13 @@
 #define _ASIO_KCP_CLIENT_WRAP__
 
 
+#include <thread>
+#include <mutex>
+#include <atomic>
+#include <condition_variable>
+#include <functional>
+#include <stdlib.h>
+
 #include "kcp_client.hpp"
 
 namespace asio_kcp {
@@ -92,6 +99,7 @@ public:
 
     void stop();
 
+    void do_workthread_loop(void);
 private:
 
     // Node: changed!  Would not need call this start_workthread() function.
@@ -104,17 +112,18 @@ private:
 
     int do_asio_kcp_connect_loop(void);
 
-    static void* workthread_loop(void* _this);
-    void do_workthread_loop(void);
+    //static void* workthread_loop(void* _this);
 
 private:
     kcp_client kcp_client_;
     int connect_result_; // 0: connect succeed,  1: need waiting connect end,   <0: connect fail, and it's error code.
     client_event_callback_t* pevent_func_;
     void* event_func_var_;
+    
+    std::thread mWorkThread;                  //线程
+    std::mutex mGlobalMutex;                    //等待锁
+    std::condition_variable cv;               //并行线程条件变量，用于唤醒线程锁
 
-
-    pthread_t workthread_;
     volatile bool workthread_want_stop_;
     volatile bool workthread_stopped_; // indicate that the workthread stopped already.
     volatile bool workthread_start_;

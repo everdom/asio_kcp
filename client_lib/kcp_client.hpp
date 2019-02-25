@@ -5,7 +5,7 @@
 #include <string>
 #include <sys/types.h>
 #include <arpa/inet.h>
-#include <pthread.h>
+#include <mutex>
 
 
 #include "threadsafe_queue_mutex.hpp"
@@ -96,6 +96,8 @@ typedef void(client_event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_ty
 */
 class kcp_client
 {
+private:
+    std::mutex mQueueMtx; 
 public:
     kcp_client(void);
     ~kcp_client(void);
@@ -150,7 +152,7 @@ private:
     void* event_callback_var_;
 
     // threadsafe_queue_mutex<std::string> send_msg_queue_;
-    threadsafe_queue_mutex<kcp_buffer_data> send_msg_queue_;
+    std::vector<kcp_buffer_data> send_msg_queue_;
 
     int udp_port_bind_;
     std::string server_ip_;
