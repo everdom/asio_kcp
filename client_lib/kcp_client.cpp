@@ -1,4 +1,5 @@
 #include "kcp_client.hpp"
+#include <stdio.h>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
