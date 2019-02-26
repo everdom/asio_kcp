@@ -5,13 +5,14 @@ export BOOST_LIB_PATH
 BOOST_INC_PATH=/usr/local/include
 export BOOST_INC_PATH
 
+./clean.sh
 
 echo "" && echo "" && echo "[-------------------------------]" && echo "   essential" && echo "[-------------------------------]" && \
     cd ./essential/ && make && \
 echo "" && echo "" && echo "[-------------------------------]" && echo "   server_lib" && echo "[-------------------------------]" && \
     cd ../server_lib/ && make && \
-echo "" && echo "" && echo "[-------------------------------]" && echo "   server" && echo "[-------------------------------]" && \
-    cd ../server/ && make && \
+#echo "" && echo "" && echo "[-------------------------------]" && echo "   server" && echo "[-------------------------------]" && \
+#    cd ../server/ && make && \
 echo "" && echo "" && echo "[-------------------------------]" && echo "   client_lib" && echo "[-------------------------------]" && \
     cd ../client_lib/ && make && \
 echo "" && echo "" && echo "[-------------------------------]" && echo "   client_with_asio" && echo "[-------------------------------]" && \
