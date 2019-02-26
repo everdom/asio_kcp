@@ -1,10 +1,11 @@
-#ifndef _ASIO_KCP_KCP_CLIENT_
+﻿#ifndef _ASIO_KCP_KCP_CLIENT_
 #define _ASIO_KCP_KCP_CLIENT_
 
 #include <stdint.h>
 #include <string>
 #include <sys/types.h>
-#include <arpa/inet.h>
+#include "../platform.h"
+
 #include <mutex>
 
 

@@ -1,10 +1,8 @@
-#include "kcp_client.hpp"
+﻿#include "kcp_client.hpp"
 #include <stdio.h>
 #include <algorithm>
 #include <cstdlib>
 #include <iostream>
-#include <unistd.h>
-#include <strings.h>
 #include <errno.h>
 #include <sstream>
 #include <fcntl.h>
@@ -27,7 +25,7 @@ kcp_client::kcp_client(void) :
     udp_socket_(-1),
     p_kcp_(NULL)
 {
-    bzero(&servaddr_, sizeof(servaddr_));
+    memset(&servaddr_, 0 ,sizeof(servaddr_));
 }
 
 kcp_client::~kcp_client(void)
@@ -78,13 +76,13 @@ int kcp_client::init_kcp(kcp_conv_t conv, int nodelay, int interval, int resend,
 
     p_kcp_->output = &kcp_client::udp_output;
 
-    // 启动快速模式
-    // 第二个参数 nodelay-启用以后若干常规加速将启动
-    // 第三个参数 interval为内部处理时钟，默认设置为 10ms
-    // 第四个参数 resend为快速重传指标，设置为2
-    // 第五个参数 为是否禁用常规流控，这里禁止
+    // 鍚姩蹇€熸ā寮?
+    // 绗簩涓弬鏁?nodelay-鍚敤浠ュ悗鑻ュ共甯歌鍔犻€熷皢鍚姩
+    // 绗笁涓弬鏁?interval涓哄唴閮ㄥ鐞嗘椂閽燂紝榛樿璁剧疆涓?10ms
+    // 绗洓涓弬鏁?resend涓哄揩閫熼噸浼犳寚鏍囷紝璁剧疆涓?
+    // 绗簲涓弬鏁?涓烘槸鍚︾鐢ㄥ父瑙勬祦鎺э紝杩欓噷绂佹
     //ikcp_nodelay(p_kcp_, 1, 10, 2, 1);
-    ikcp_nodelay(p_kcp_, nodelay, interval, resend, nc); // 设置成1次ACK跨越直接重传, 这样反应速度会更快. 内部时钟5毫秒.
+    ikcp_nodelay(p_kcp_, nodelay, interval, resend, nc); // 璁剧疆鎴?娆CK璺ㄨ秺鐩存帴閲嶄紶, 杩欐牱鍙嶅簲閫熷害浼氭洿蹇? 鍐呴儴鏃堕挓5姣.
 
     connect_succeed_ = true;
 
@@ -139,6 +137,18 @@ void kcp_client::update()
 //
 int kcp_client::init_udp_connect(void)
 {
+#if defined(WIN32) || defined(WIN64)
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
+    wVersionRequested = MAKEWORD(1, 1);
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0)
+    {
+        perror("WSAStartup error");
+    }
+#endif
+
     // servaddr_
     {
         servaddr_.sin_family = AF_INET;
@@ -154,42 +164,45 @@ int kcp_client::init_udp_connect(void)
         }
     }
 
-    // create udp_socket_
+
+    // set socket non-blocking
     {
+#if defined(WIN32) || defined(WIN64)
+        udp_socket_ = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+        if (udp_socket_ < 0)
+        {
+            std::cerr << "socket error return with errno: " << errno << " " << strerror(errno) << std::endl;
+            return KCP_ERR_CREATE_SOCKET_FAIL;
+        }
+
+        unsigned long flag = 1;
+        if (ioctlsocket(udp_socket_, FIONBIO, &flag) != 0){
+            closesocket(udp_socket_);
+            return KCP_ERR_SET_NON_BLOCK_FAIL;
+        }
+#else
         udp_socket_ = socket(AF_INET, SOCK_DGRAM, 0);
         if (udp_socket_ < 0)
         {
             std::cerr << "socket error return with errno: " << errno << " " << strerror(errno) << std::endl;
             return KCP_ERR_CREATE_SOCKET_FAIL;
         }
-    }
 
-    // set socket recv timeout
-    /*{
-        struct timeval recv_timeo;
-        recv_timeo.tv_sec = 0;
-        recv_timeo.tv_usec = 2 * 1000; // 2 milliseconds
-        int ret = setsockopt(udp_socket_, SOL_SOCKET, SO_RCVTIMEO, &recv_timeo, sizeof(recv_timeo));
-        if (ret < 0)
-        {
-            std::cerr << "setsockopt error return with errno: " << errno << " " << strerror(errno) << std::endl;
-        }
-    }*/
-
-    // set socket non-blocking
-    {
-        int flags = fcntl(udp_socket_, F_GETFL, 0);
-        if (flags == -1)
+        int flag = fcntl(udp_socket_, F_GETFL, 0);
+        if (flag == -1)
         {
             std::cerr << "get socket non-blocking: fcntl error return with errno: " << errno << " " << strerror(errno) << std::endl;
             return KCP_ERR_SET_NON_BLOCK_FAIL;
         }
-        int ret = fcntl(udp_socket_, F_SETFL, flags | O_NONBLOCK);
+
+
+        ret = fcntl(udp_socket_, F_SETFL, flag | O_NONBLOCK);
         if (ret == -1)
         {
             std::cerr << "set socket non-blocking: fcntl error return with errno: " << errno << " " << strerror(errno) << std::endl;
             return KCP_ERR_SET_NON_BLOCK_FAIL;
         }
+#endif
     }
 
     // set recv buf bigger

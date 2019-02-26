@@ -1,4 +1,4 @@
-//=====================================================================
+﻿//=====================================================================
 //
 // KCP - A Better ARQ Protocol Implementation
 // skywind3000 (at) gmail.com, 2010-2011
@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#if _MSC_VER
+#define inline __inline
+#endif
 
 //=====================================================================
 // 32BIT INTEGER DEFINITION 

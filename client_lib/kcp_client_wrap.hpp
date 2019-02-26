@@ -1,4 +1,4 @@
-#ifndef _ASIO_KCP_CLIENT_WRAP__
+﻿#ifndef _ASIO_KCP_CLIENT_WRAP__
 #define _ASIO_KCP_CLIENT_WRAP__
 
 
@@ -120,9 +120,9 @@ private:
     client_event_callback_t* pevent_func_;
     void* event_func_var_;
     
-    std::thread mWorkThread;                  //线程
-    std::mutex mGlobalMutex;                    //等待锁
-    std::condition_variable cv;               //并行线程条件变量，用于唤醒线程锁
+    std::thread mWorkThread;                  //绾跨▼
+    std::mutex mGlobalMutex;                    //绛夊緟閿?
+    std::condition_variable cv;               //骞惰绾跨▼鏉′欢鍙橀噺锛岀敤浜庡敜閱掔嚎绋嬮攣
 
     volatile bool workthread_want_stop_;
     volatile bool workthread_stopped_; // indicate that the workthread stopped already.
