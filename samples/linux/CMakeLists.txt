@@ -6,7 +6,7 @@ project (kcp-sample)
 set(KCP_CLIENT_DIR "/home/lwq/source/asio-kcp")
 set(KCP_CLIENT_HEAD ${KCP_CLIENT_DIR}/include)
 set(KCP_CLIENT_SRC ${KCP_CLIENT_DIR}/src)
-set(KCP_CLIENT_LIB ${KCP_CLIENT_DIR}/sdk/linux/${CMAKE_BUILD_TYPE})
+set(KCP_CLIENT_LIB ${KCP_CLIENT_DIR}/sdks/linux/${CMAKE_BUILD_TYPE})
 
 set (ESSENTIAL_DIR ../../essential)
 set (UTIL_DIR ../../util)

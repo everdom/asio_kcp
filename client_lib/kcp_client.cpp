@@ -196,7 +196,7 @@ int kcp_client::init_udp_connect(void)
         }
 
 
-        ret = fcntl(udp_socket_, F_SETFL, flag | O_NONBLOCK);
+        int ret = fcntl(udp_socket_, F_SETFL, flag | O_NONBLOCK);
         if (ret == -1)
         {
             std::cerr << "set socket non-blocking: fcntl error return with errno: " << errno << " " << strerror(errno) << std::endl;

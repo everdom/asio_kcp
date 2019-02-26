@@ -1,4 +1,5 @@
-#include <string>
+#include <stdio.h>
+#include <string.h>
 #include <iostream>
 #include <chrono>
 #include <thread>
@@ -13,8 +14,10 @@ static kcp_client_wrap *g_kcp_client = NULL;
 
 
 static void client_event_callback(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg, void* var){
- 
-	cout << "client_event_callback conv=" << conv << ",event_type=" << event_type << ",msg=" << msg.data() << ",var=" << var << endl;
+    char buf[100];
+    memcpy(buf, msg.data(), msg.size());
+    buf[msg.size()] = 0;
+    cout << "client_event_callback conv=" << conv << ",event_type=" << event_type << ",msg=" << buf << ",var=" << var << endl;
 }
 
 int sendMsg(char *msg,size_t len){
@@ -35,7 +38,7 @@ int main(int argc, char* argv[])
 		cout << "init result = " << result << endl;
 		g_kcp_client->set_event_callback(client_event_callback,g_kcp_client);
 		cout << "set_event_callback" << endl;
-		result = sendMsg("aaa",3);
+		result = sendMsg("bbb",3);
 		cout << "sendMsg result = " << result  << endl;
 		this_thread::sleep_for(chrono::milliseconds(10000));
 	}catch(...){
