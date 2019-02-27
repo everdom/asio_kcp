@@ -3,7 +3,8 @@
 // this queue is multithread safe. but it's not a efficient implement.
 
 #include <queue>
-#include "mutex.h"
+#include <thread>
+#include <mutex>
 
 namespace asio_kcp {
 
@@ -11,48 +12,54 @@ template<typename T>
 class threadsafe_queue_mutex
 {
 private:
+    std::mutex mtx;
     std::queue<T> data_queue;
 public:
-    threadsafe_queue_mutex(){}
+    threadsafe_queue_mutex(){
+    }
+
+    ~threadsafe_queue_mutex(){
+    }
 
     size_t size()
     {
-        MutexLockGuard guard(mutex_);
+        std::unique_lock<std::mutex> lck(mtx);
         return data_queue.size();
     }
     void push(T new_value)
     {
-        MutexLockGuard guard(mutex_);
+        std::unique_lock<std::mutex> lck(mtx);
         data_queue.push(new_value);
     }
     bool try_pop(T& value)
     {
-        MutexLockGuard guard(mutex_);
+        std::unique_lock<std::mutex> lck(mtx);
         if(data_queue.empty())
             return false;
         value=data_queue.front();
         data_queue.pop();
         return true;
     }
-    std::queue<T> grab_all(void)
+    void grab_all(std::queue<T>& ret)
     {
-        std::queue<T> ret;
-
-        {
-            MutexLockGuard guard(mutex_);
-            std::swap(ret, data_queue);
-        }
-
-        return ret;
+        std::unique_lock<std::mutex> lck(mtx);
+        std::swap(ret, data_queue);
     }
+
+    // void grab_all(std::queue<T> &ret)
+    // {
+    //     std::unique_lock<std::mutex> lck(mtx);
+    //     while(!data_queue.empty()){
+    //         ret.push(data_queue.front());
+    //         data_queue.pop();
+    //     }
+    // }
+
     bool empty() const
     {
-        MutexLockGuard guard(mutex_);
+        std::unique_lock<std::mutex> lck(mtx);
         return data_queue.empty();
     }
-
-private:
-    MutexLock mutex_;
 };
 
 } // end of namespace asio_kcp

@@ -1,5 +1,6 @@
-#include <exception>
+﻿#include <exception>
 #include "../check_function.h"
+#include "../../platform.h"
 
 namespace Essential
 {

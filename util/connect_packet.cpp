@@ -1,9 +1,9 @@
-#include <cstring>
+﻿#include <cstring>
 #include <iostream>
 #include <sstream>
 #include <cstdlib>
 #include <stdio.h>
-
+#include "../platform.h"
 
 #include "connect_packet.hpp"
 

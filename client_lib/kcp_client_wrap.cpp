@@ -1,4 +1,4 @@
-#include <iostream>
+﻿#include <iostream>
 
 #include "kcp_client_wrap.hpp"
 #include "kcp_client_util.h"
@@ -11,7 +11,6 @@ kcp_client_wrap::kcp_client_wrap(void) :
     connect_result_(1),
     pevent_func_(NULL),
     event_func_var_(NULL),
-    workthread_(0),
     workthread_want_stop_(false),
     workthread_stopped_(false),
     workthread_start_(false),
@@ -73,8 +72,8 @@ int kcp_client_wrap::connect(int udp_port_bind, const std::string& server_ip, co
         return ret_connect_async;
 
 
-    // 因为删除了握手流程，直接置为0
-    // TODO: 重新定义服务器握手流程
+    // 鍥犱负鍒犻櫎浜嗘彙鎵嬫祦绋嬶紝鐩存帴缃负0
+    // TODO: 閲嶆柊瀹氫箟鏈嶅姟鍣ㄦ彙鎵嬫祦绋?
     connect_result_ = 0;
     int ret = do_asio_kcp_connect_loop();
     if (ret == 0) // connect succeed
@@ -106,6 +105,12 @@ int kcp_client_wrap::connect_async(int udp_port_bind, const std::string& server_
     return 0;
 }
 
+
+static void workthread_loop(void* _this)
+{
+    ((kcp_client_wrap*)_this)->do_workthread_loop();
+}
+
 void kcp_client_wrap::start_workthread(void)
 {
     if (workthread_start_)
@@ -115,28 +120,24 @@ void kcp_client_wrap::start_workthread(void)
         return;
     }
 
-    int ret = pthread_create(&workthread_, NULL, &kcp_client_wrap::workthread_loop, (void*)this);
-    if (ret != 0)
-    {
-        std::cerr << "start_workthread pthread_create error: " << ret << std::endl;
-        return;
-    }
-
+    //int ret = pthread_create(&workthread_, NULL, &kcp_client_wrap::workthread_loop, (void*)this);
+    // if (ret != 0)
+    // {
+    //     std::cerr << "start_workthread pthread_create error: " << ret << std::endl;
+    //     return;
+    // }
+    mWorkThread = std::thread(workthread_loop, this);
+    mWorkThread.detach(); 
     // waiting thread start
-    {
-        while (!workthread_start_)
-            millisecond_sleep(1);
+    while (!workthread_start_){
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 }
 
-void* kcp_client_wrap::workthread_loop(void* _this)
-{
-    ((kcp_client_wrap*)_this)->do_workthread_loop();
-    return NULL;
-}
 
 void kcp_client_wrap::do_workthread_loop(void)
 {
+    std::unique_lock<std::mutex> lck(mGlobalMutex);
     std::cout << "workthread_loop thread start!" << std::endl;
     workthread_start_ = true;
     kcp_last_update_clock_ = iclock64() - KCP_UPDATE_INTERVAL;
@@ -151,7 +152,7 @@ void kcp_client_wrap::do_workthread_loop(void)
         }
         else
         {
-            millisecond_sleep(1);
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
     }
 
@@ -159,7 +160,6 @@ void kcp_client_wrap::do_workthread_loop(void)
     workthread_start_ = false;
     workthread_stopped_ = true;
     std::cout << "workthread_loop thread end!" << std::endl;
-    pthread_exit(NULL);
     return;
 }
 
@@ -168,10 +168,11 @@ void kcp_client_wrap::stop()
     if (workthread_start_)
     {
         workthread_want_stop_ = true;
-        while (workthread_stopped_ == false)
+        while (workthread_stopped_ == false){
             millisecond_sleep(1);
-        void *status;
-        pthread_join(workthread_, &status);
+        }
+        mGlobalMutex.lock();
+        mGlobalMutex.unlock();
     }
     kcp_client_.stop();
 }
