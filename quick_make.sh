@@ -5,6 +5,7 @@ export BOOST_LIB_PATH
 BOOST_INC_PATH=/usr/local/include
 export BOOST_INC_PATH
 
+./clean.sh
 
 echo "" && echo "" && echo "[-------------------------------]" && echo "   essential" && echo "[-------------------------------]" && \
     cd ./essential/ && make && \

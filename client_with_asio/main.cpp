@@ -5,6 +5,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "../essential/utility/strutil.h"
+// #include "client_with_asio_hileia.hpp"
 #include "client_with_asio_wrap.hpp"
 // #include "client_with_asio.hpp"
 
@@ -15,8 +16,8 @@ enum { max_length = 1024 };
 
 void test_kcp(boost::asio::io_service &io_service, const int port_bind_to, const char* ip, const int port, size_t test_msg_size)
 {
+    // client_with_asio_hileia client(io_service, port_bind_to, std::string(ip), port, test_msg_size);
     client_with_asio_wrap client(io_service, port_bind_to, std::string(ip), port, test_msg_size);
-    // client_with_asio client(io_service, port_bind_to, std::string(ip), port, test_msg_size);
     io_service.run();
 }
 
