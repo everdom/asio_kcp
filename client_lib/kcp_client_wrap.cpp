@@ -72,8 +72,8 @@ int kcp_client_wrap::connect(int udp_port_bind, const std::string& server_ip, co
         return ret_connect_async;
 
 
-    // 鍥犱负鍒犻櫎浜嗘彙鎵嬫祦绋嬶紝鐩存帴缃负0
-    // TODO: 閲嶆柊瀹氫箟鏈嶅姟鍣ㄦ彙鎵嬫祦绋?
+    // 因为删除了握手流程，直接置为0
+    // TODO: 重新定义服务器握手流程
     connect_result_ = 0;
     int ret = do_asio_kcp_connect_loop();
     if (ret == 0) // connect succeed

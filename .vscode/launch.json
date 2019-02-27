@@ -1,0 +1,28 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "(gdb) client_with_asio",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/client_with_asio/client_with_asio",
+            // "args": ["23445", "127.0.0.1", "12345", "500", "2>&1|grep --line-buffered -v -e deadline_timer -e \"ec=system:0$\" -e \"|$\""],
+            "args": ["23445", "127.0.0.1", "12345", "500"],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}",
+            "environment": [],
+            "externalConsole": true,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
