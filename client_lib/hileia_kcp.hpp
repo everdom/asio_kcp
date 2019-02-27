@@ -13,7 +13,7 @@ namespace asio_kcp {
 
   typedef struct{
     kcp_frame_head head;
-    const char *data;
+    char *data;
   }kcp_frame;
 
   typedef void(event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, kcp_frame &kf, void* /*var*/);

@@ -128,7 +128,7 @@ void client_with_asio_hileia::send_test_msg(void)
     kf.head.from_srv = 0;
     kf.head.msg_id = 0;
     kf.head.data_len = test_str.size();
-    kf.data = test_str.c_str();
+    kf.data = (char *)test_str.c_str();
     kcp_client_hileia_.send_data(kf);
 }
 
