@@ -37,7 +37,7 @@ public:
     void do_timeout(void);
 
     // user level send msg.
-    void send_kcp_msg(const std::string& msg);
+    void send_kcp_msg(kcp_buffer_data& msg);
 
     // todo need close if connection bind some asio callback.
     //void close();

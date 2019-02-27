@@ -96,9 +96,9 @@ void connection::send_udp_package(const char *buf, int len)
     }
 }
 
-void connection::send_kcp_msg(const std::string& msg)
+void connection::send_kcp_msg(kcp_buffer_data& msg)
 {
-    int send_ret = ikcp_send(p_kcp_, msg.c_str(), msg.size());
+    int send_ret = ikcp_send(p_kcp_, msg.data(), msg.size());
     if (send_ret < 0)
     {
         std::cout << "send_ret<0: " << send_ret << std::endl;
@@ -146,7 +146,9 @@ void connection::input(char* udp_data, size_t bytes_recvd, const udp::endpoint& 
                 Essential::ToHexDumpText(package, 32) << std::endl;
             if (auto ptr = connection_manager_weak_ptr_.lock())
             {
-                ptr->call_event_callback_func(conv_, eRcvMsg, std::make_shared<std::string>(package));
+                kcp_buffer_data kbd(package.c_str(), package.size());
+
+                ptr->call_event_callback_func(conv_, eRcvMsg, kbd);
             }
         }
     }
@@ -170,8 +172,10 @@ void connection::do_timeout(void)
 {
     if (auto ptr = connection_manager_weak_ptr_.lock())
     {
-        std::shared_ptr<std::string> msg(new std::string("timeout"));
-        ptr->call_event_callback_func(conv_, eEventType::eDisconnect, msg);
+        std::string msg = "timeout";
+
+        kcp_buffer_data kbd(msg.c_str(), msg.size());
+        ptr->call_event_callback_func(conv_, eEventType::eDisconnect, kbd);
     }
 }
 

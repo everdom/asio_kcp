@@ -5,6 +5,7 @@
 #include <string>
 #include <boost/noncopyable.hpp>
 #include "../server_lib/server.hpp"
+#include "../server_lib/kcp_buffer_data.hpp"
 
 class server
 : private boost::noncopyable
@@ -20,7 +21,7 @@ class server
         /// Handle a request to stop the server.
         void handle_stop();
 
-        void event_callback(kcp_conv_t conv, kcp_svr::eEventType event_type, std::shared_ptr<std::string> msg);
+  void event_callback(kcp_conv_t conv, kcp_svr::eEventType event_type, kcp_svr::kcp_buffer_data& msg);
 
         void hook_test_timer(void);
         void handle_test_timer(void);

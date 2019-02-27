@@ -7,7 +7,7 @@
 #include <boost/asio.hpp>
 
 #include "connection_container.hpp"
-
+#include "kcp_buffer_data.hpp"
 
 
 namespace kcp_svr {
@@ -28,13 +28,14 @@ public:
 
     void set_callback(const std::function<event_callback_t>& func);
 
-    int send_msg(const kcp_conv_t& conv, std::shared_ptr<std::string> msg);
+    // int send_msg(const kcp_conv_t& conv, std::shared_ptr<std::string> msg);
+    int send_msg(const kcp_conv_t& conv, kcp_buffer_data& msg);
 
 
 
 
     // this func should be multithread safe if running UdpPacketHandler in work thread pool.  can implement by io_service.dispatch
-    void call_event_callback_func(kcp_conv_t conv, eEventType event_type, std::shared_ptr<std::string> msg);
+  void call_event_callback_func(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg);
 
     // this func should be multithread safe if running UdpPacketHandler in work thread pool.  can implement by io_service.dispatch
     void send_udp_packet(const std::string& msg, const udp::endpoint& endpoint);

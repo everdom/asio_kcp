@@ -4,6 +4,7 @@
 
 #include <stdint.h>
 #include <memory>
+#include "kcp_buffer_data.hpp"
 
 struct IKCPCB;
 typedef struct IKCPCB ikcpcb;
@@ -35,5 +36,17 @@ namespace kcp_svr
 
     const char* eventTypeStr(eEventType eventType);
 
-    typedef void(event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, std::shared_ptr<std::string> /*msg*/);
+    typedef struct{
+      uint8_t from_srv;
+      uint16_t msg_id;
+      uint32_t data_len;
+    }kcp_frame_head;
+
+    typedef struct{
+      kcp_frame_head head;
+      char *data;
+    }kcp_frame;
+
+    typedef void(event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, kcp_buffer_data &);
+    // typedef void(event_callback_t)(kcp_conv_t /*conv*/, eEventType /*event_type*/, std::shared_ptr<std::string> /*msg*/);
 }

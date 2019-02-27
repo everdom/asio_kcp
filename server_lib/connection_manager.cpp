@@ -76,8 +76,9 @@ void connection_manager::force_disconnect(const kcp_conv_t& conv)
     if (!connections_.find_by_conv(conv))
         return;
 
-    std::shared_ptr<std::string> msg(new std::string("server force disconnect"));
-    call_event_callback_func(conv, eEventType::eDisconnect, msg);
+    std::string msg = "server force disconnect";
+    kcp_buffer_data kbd(msg.c_str(), msg.size());
+    call_event_callback_func(conv, eEventType::eDisconnect, kbd);
     connections_.remove_connection(conv);
 }
 
@@ -86,7 +87,7 @@ void connection_manager::set_callback(const std::function<event_callback_t>& fun
     event_callback_ = func;
 }
 
-void connection_manager::call_event_callback_func(kcp_conv_t conv, eEventType event_type, std::shared_ptr<std::string> msg)
+void connection_manager::call_event_callback_func(kcp_conv_t conv, eEventType event_type, kcp_buffer_data& msg)
 {
     event_callback_(conv, event_type, msg);
 }
@@ -189,13 +190,13 @@ void connection_manager::send_udp_packet(const std::string& msg, const boost::as
     udp_socket_.send_to(boost::asio::buffer(msg), endpoint);
 }
 
-int connection_manager::send_msg(const kcp_conv_t& conv, std::shared_ptr<std::string> msg)
+int connection_manager::send_msg(const kcp_conv_t& conv, kcp_buffer_data& msg)
 {
     connection::shared_ptr connection_ptr = connections_.find_by_conv(conv);
     if (!connection_ptr)
         return -1;
 
-    connection_ptr->send_kcp_msg(*msg);
+    connection_ptr->send_kcp_msg(msg);
     return 0;
 }
 
