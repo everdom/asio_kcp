@@ -74,7 +74,8 @@ MUDUO_DEFINE = -D MUDUO_STD_STRING -D __GXX_EXPERIMENTAL_CXX0X__
 WORNING_FLAGS = -Wall
 
 # The pre-processor options used by the cpp (man cpp for more).
-CPPFLAGS  = $(WORNING_FLAGS) -I $(BOOST_INC_PATH) -I ../third_party/g2log/src -I ../third_party/muduo -g3 $(BOOST_DEFINE) $(MUDUO_DEFINE) $(ASIO_KCP_DEFINE)
+CPPFLAGS  = $(WORNING_FLAGS) -I $(BOOST_INC_PATH) -I ../third_party/g2log/src -I ../third_party/muduo -g3 $(BOOST_DEFINE) $(MUDUO_DEFINE)
+# CPPFLAGS  = $(WORNING_FLAGS) -I $(BOOST_INC_PATH) -I ../third_party/g2log/src -I ../third_party/muduo -g3 $(BOOST_DEFINE) $(MUDUO_DEFINE) $(ASIO_KCP_DEFINE)
 
 # The options used in linking as well as in any direct use of ld.
 ifeq ($(LC_OS_NAME), darwin)

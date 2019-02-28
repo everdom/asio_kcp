@@ -27,7 +27,7 @@ typedef unsigned long long IUINT64;
 // indicate a converse between a client and connection_obj between server.
 typedef IUINT64 kcp_conv_t;
 
-#define MAX_MSG_SIZE 1024 * 10
+// #define MAX_MSG_SIZE 1024 * 10
 #define KCP_UPDATE_INTERVAL 5 // milliseconds
 
 #define KCP_ERR_ALREADY_CONNECTED       -2001
@@ -141,9 +141,11 @@ private:
 
     void do_recv_udp_packet_in_loop(void);
     void do_send_msg_in_queue(void);
-    void handle_udp_packet(kcp_buffer_data& udp_packet);
+    void handle_udp_packet(const std::string& udp_packet);
 
     kcp_buffer_data recv_udp_package_from_kcp(void);
+
+    int recv_msg_partially(char *data, ssize_t data_size);
 
     uint64_t connect_start_time_;
     uint64_t last_send_connect_msg_time_;

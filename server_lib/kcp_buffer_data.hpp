@@ -6,6 +6,7 @@
 #include <string>
 
 #define MAX_DATA_SIZE (10*1024)
+// #define MAX_DATA_SIZE (50)
 
 namespace kcp_svr {
 

@@ -50,7 +50,7 @@ void server::handle_stop()
 
 void server::event_callback(kcp_conv_t conv, kcp_svr::eEventType event_type, kcp_svr::kcp_buffer_data& msg)
 {
-  std::cout << "event_callback:" << conv << " type:" << kcp_svr::eventTypeStr(event_type) << "msg: " << msg.data() << std::endl;
+  std::cout << "event_callback:" << conv << " type:" << kcp_svr::eventTypeStr(event_type) << " msg size: "<<msg.size()<< std::endl;
     if (event_type == kcp_svr::eRcvMsg)
     {
         // auto send back msg for testing.

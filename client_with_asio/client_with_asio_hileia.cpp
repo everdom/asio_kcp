@@ -56,7 +56,11 @@ std::string client_with_asio_hileia::make_test_str(size_t test_str_size)
     std::ostringstream ostr;
     ostr << CLOCK_START_STR << iclock64();
     std::string msg_str = ostr.str();
-    msg_str += test_str(CLOCK_INTERVAL_STR, test_str_size - msg_str.size());
+    // msg_str += test_str(CLOCK_INTERVAL_STR, test_str_size - msg_str.size());
+    // msg_str += "=0=0123456789abcdefghijklmnopqrstuvwxyz=0==1=0123456789abcdefghijklmnopqrstuvwxyz=1==2=0123456789abcdefghijklmnopqrstuvwxyz=2==3=0123456789abcdefghijklmnopqrstuvwxyz=3==4=0123456789abcdefghijklmnopqrstuvwxyz=4==5=0123456789abcdefghijklmnopqrstuvwxyz=5==6=0123456789abcdefghijklmnopqrstuvwxyz=6==7=0123456789abcdefghijklmnopqrstuvwxyz=7==8=0123456789abcdefghijklmnopqrstuvwxyz=8==9=0123456789abcdefghijklmnopqrstuvwxyz=9=";
+    // msg_str += test_str(CLOCK_INTERVAL_STR, test_str_size - msg_str.size());
+    msg_str += "00000000000000000000000000000000000000000000000000111111111111111111111111111111111111111111111111112222222222222222222222222222222222222222222222222233333333333333333333333333333333333333333333333333444444444444444444444444444444444444444444444444445555555555555555555555555555555555555555555555555566666666666666666666666666666666666666666666666666777777777777777777777777777777777777777777777777778888888888888888888888888888888888888888888888888899999999999999999999999999999999999999999999999999";
+
     return msg_str;
 }
 
@@ -242,6 +246,7 @@ void client_with_asio_hileia::handle_client_event_callback(kcp_conv_t conv, eEve
             break;
         case eRcvMsg:
             std::cout << "recv eRcvMsg with conv:" << conv << "  msg_count: " << msg.head.data_len << std::endl;
+            std::cout << "msg:" << msg.data << std::endl << std::endl;
             break;
         case eDisconnect:
           std::cout << "disconnect with conv:" << conv << " msg: " << msg.data << std::endl;

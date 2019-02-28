@@ -10,6 +10,7 @@
 
 #include "../util/ikcp.h"
 #include "../util/connect_packet.hpp"
+#include "../essential/utility/strutil.h"
 #include "kcp_client_util.h"
 
 namespace asio_kcp {
@@ -235,7 +236,7 @@ int kcp_client::init_udp_connect(void)
 
 void kcp_client::do_recv_udp_packet_in_loop(void)
 {
-    char recv_buf[MAX_MSG_SIZE * 2] = ""; // udp packet will not twice bigger than kcp msg size.
+    char recv_buf[MAX_DATA_SIZE * 2] = ""; // udp packet will not twice bigger than kcp msg size.
 
     socklen_t addr_len= sizeof(servaddr_);
     const ssize_t ret_recv = recvfrom(udp_socket_, recv_buf, sizeof(recv_buf), 0, (struct sockaddr*)(&servaddr_), &addr_len);
@@ -258,11 +259,10 @@ void kcp_client::do_recv_udp_packet_in_loop(void)
     if (ret_recv == 0)
         return; // do nothing.   ignore the zero size packet.
 
-    kcp_buffer_data msg(recv_buf, ret_recv);
-    // ret_recv > 0
-    handle_udp_packet(msg);
+    handle_udp_packet(std::string(recv_buf, ret_recv));
     return;
 }
+
 
 int kcp_client::udp_output(const char *buf, int len, ikcpcb *kcp, void *user)
 {
@@ -291,7 +291,7 @@ int kcp_client::send_msg(const char *data, long size)
     std::unique_lock<std::mutex>(mQueueMtx);
     kcp_buffer_data msg;
 
-    std::cout << "do_send_msg_in_queue send_msg size=" << send_msg_queue_.size() <<std::endl;
+    std::cout << "do_send_msg_in_queue send_msg queue size=" << send_msg_queue_.size() <<std::endl;
     int ret = msg.set_data(data, size);
     if(ret != 0){
       std::cerr << "send_msg set_data error: " << ret << std::endl;
@@ -326,7 +326,7 @@ void kcp_client::do_send_msg_in_queue(void)
     }
 }
 
-void kcp_client::handle_udp_packet(kcp_buffer_data& udp_packet)
+void kcp_client::handle_udp_packet(const std::string& udp_packet)
 {
     // if (is_disconnect_packet(udp_packet.data(), udp_packet.size()))
     // {
@@ -339,7 +339,7 @@ void kcp_client::handle_udp_packet(kcp_buffer_data& udp_packet)
     // }
 
 
-    ikcp_input(p_kcp_, udp_packet.data(), udp_packet.size());
+    ikcp_input(p_kcp_, udp_packet.c_str(), udp_packet.size());
 
     while (true)
     {
@@ -347,7 +347,7 @@ void kcp_client::handle_udp_packet(kcp_buffer_data& udp_packet)
         if (msg.size() > 0)
         {
             // recved good msg.
-          std::cerr << "recv good kcp msg: " << msg.data() << std::endl;
+          std::cerr << "recv good kcp msg: \n" << Essential::ToHexDumpText(std::string(msg.data(), msg.size()), 32) << std::endl;
             if (pevent_func_ != NULL)
             {
                 (*pevent_func_)(p_kcp_->conv, eRcvMsg, msg, event_callback_var_);
@@ -360,7 +360,7 @@ void kcp_client::handle_udp_packet(kcp_buffer_data& udp_packet)
 
 kcp_buffer_data kcp_client::recv_udp_package_from_kcp(void)
 {
-    char kcp_buf[MAX_MSG_SIZE] = "";
+    char kcp_buf[MAX_DATA_SIZE] = "";
     int kcp_recvd_bytes = ikcp_recv(p_kcp_, kcp_buf, sizeof(kcp_buf));
 
     kcp_buffer_data result;

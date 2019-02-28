@@ -1,6 +1,7 @@
 OLD_PWD="$( pwd )"
 
-cd ./client_with_asio/ && make clean && \
+cd ./client_lib/ && make clean && \
+    cd ../client_with_asio/ && make clean && \
     cd ../server/ && make clean && \
     cd ../server_lib/ && make clean && \
     cd ../asio_kcp_utest/ && make clean && \

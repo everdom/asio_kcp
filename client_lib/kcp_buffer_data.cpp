@@ -28,7 +28,7 @@ namespace asio_kcp {
     }
 
     if(size > MAX_DATA_SIZE){
-      std::cerr << "kcp_buffer_data::set_data size > MAX_DATA_SIZE("<<MAX_DATA_SIZE<<")" << std::endl;
+      std::cerr << "kcp_buffer_data::set_data size "<<size<<"> MAX_DATA_SIZE("<<MAX_DATA_SIZE<<")" << std::endl;
       return -2;
     }
 

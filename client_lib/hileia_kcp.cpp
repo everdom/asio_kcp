@@ -31,21 +31,35 @@ namespace asio_kcp {
 
     kcp_frame_head &kfh = kf.head;
 
-    uint64_t data_buf_size = sizeof(kcp_frame_head) + kfh.data_len;
+    uint64_t data_buf_size = sizeof(uint8_t) + sizeof(uint16_t) +sizeof(uint32_t) + kfh.data_len;
     char *kcp_msg_buf = (char *)malloc(data_buf_size);
     if(kcp_msg_buf == NULL){
       std::cerr << "send_msg error, not enough memory" << std::endl;
       return -1;
     }
 
-    void *ptr = memcpy(kcp_msg_buf, &kfh, sizeof(kcp_frame_head));
+    void *ptr = memcpy(kcp_msg_buf, &kfh.from_srv, sizeof(uint8_t));
     if(ptr == NULL){
       std::cerr << "send_msg error, memcpy error" << std::endl;
       free(kcp_msg_buf);
       return -2;
     }
 
-    ptr = memcpy(kcp_msg_buf+sizeof(kcp_frame_head), kf.data, kfh.data_len);
+    ptr = memcpy(kcp_msg_buf+1, &kfh.msg_id, sizeof(uint16_t));
+    if(ptr == NULL){
+      std::cerr << "send_msg error, memcpy error" << std::endl;
+      free(kcp_msg_buf);
+      return -2;
+    }
+
+    ptr = memcpy(kcp_msg_buf+3, &kfh.data_len, sizeof(uint32_t));
+    if(ptr == NULL){
+      std::cerr << "send_msg error, memcpy error" << std::endl;
+      free(kcp_msg_buf);
+      return -2;
+    }
+
+    ptr = memcpy(kcp_msg_buf+7, kf.data, kfh.data_len);
     if(ptr == NULL){
       std::cerr << "send_msg error, memcpy error"<< std::endl;
       free(kcp_msg_buf);
@@ -84,11 +98,24 @@ namespace asio_kcp {
     if(!frame_begin){
       data_pos = 0;
 
-      void *ptr = memcpy(&kfh, msg.data(), sizeof(kcp_frame_head));
+      void *ptr = memcpy(&kfh.from_srv, msg.data(), sizeof(uint8_t));
       if(ptr == NULL){
         std::cerr << "hileia_kcp::handle_client_event_callback error, memcpy error"<< std::endl;
         return;
       }
+
+      ptr = memcpy(&kfh.msg_id, msg.data()+1, sizeof(uint16_t));
+      if(ptr == NULL){
+        std::cerr << "hileia_kcp::handle_client_event_callback error, memcpy error"<< std::endl;
+        return;
+      }
+
+      ptr = memcpy(&kfh.data_len, msg.data()+3, sizeof(uint32_t));
+      if(ptr == NULL){
+        std::cerr << "hileia_kcp::handle_client_event_callback error, memcpy error"<< std::endl;
+        return;
+      }
+
 
       kf.data = (char *)malloc(kfh.data_len);
       if(kf.data == NULL){
@@ -98,11 +125,11 @@ namespace asio_kcp {
 
       frame_begin = true;
 
-      uint32_t remain_size = msg.size() - sizeof(kcp_frame_head);
+      uint32_t remain_max_size = msg.size() - 7; 
 
-      // 如果数据小于一帧的大小
-      if(kfh.data_len <= remain_size){
-        ptr = memcpy(kf.data, msg.data()+data_pos, kfh.data_len);
+      // 如果数据小于等于一帧的大小
+      if(kfh.data_len <= remain_max_size){
+        ptr = memcpy(kf.data, msg.data()+7, kfh.data_len);
 
         if(ptr == NULL){
           std::cerr << "hileia_kcp::handle_client_event_callback error, memcpy error"<< std::endl;
@@ -114,14 +141,15 @@ namespace asio_kcp {
 
         frame_begin = false;
       }else{
-        ptr = memcpy(kf.data, msg.data()+data_pos, remain_size);
+        ptr = memcpy(kf.data, msg.data()+7, msg.size()-7);
         if(ptr == NULL){
           std::cerr << "hileia_kcp::handle_client_event_callback error, memcpy error"<< std::endl;
           return;
         }
 
         // 加上本帧剩余数据长度
-        data_pos += kfh.data_len;
+        data_pos += msg.size()-7;
+        return;
       }
     }
 
@@ -149,20 +177,18 @@ namespace asio_kcp {
         data_pos += msg.size();
       }
 
+    }
 
-      if(data_pos == kfh.data_len){
-        frame_begin = false;
+    if(data_pos == kfh.data_len){
+      frame_begin = false;
 
-        if (pevent_func_)
+      if (pevent_func_)
         {
           (*pevent_func_)(conv, event_type, kf, event_func_var_);
         }
 
-        free(kf.data);
-      }
+      free(kf.data);
     }
-
-
   }
 
   int hileia_kcp::send_data_partially(const char *data, uint64_t data_size){
